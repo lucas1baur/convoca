@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convoca — Entrar</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+  .login-wrap{min-height:100vh; display:grid; place-items:center; padding:20px}
+  .login-box{
+    background:var(--bloco); border:1px solid var(--linha); border-radius:4px;
+    border-top:3px solid var(--carimbo); padding:32px; width:100%; max-width:380px;
+  }
+  .login-box .mark{
+    font-size:2rem; color:var(--carimbo); background:#f3f1ea; width:52px; height:52px;
+    display:grid; place-items:center; border-radius:2px; font-weight:700; margin:0 auto 16px;
+  }
+  .login-box h1{margin:0 0 4px; font-size:1.3rem; text-align:center}
+  .login-box p.sub{margin:0 0 24px; text-align:center; color:var(--tinta-suave); font-size:.85rem}
+  .login-box label{display:block; font-size:.8rem; color:var(--tinta-suave); margin-bottom:6px}
+  .login-box input{
+    width:100%; padding:11px 12px; border:1px solid var(--linha); border-radius:2px;
+    font-size:1rem; margin-bottom:16px;
+  }
+  .login-box button{width:100%; padding:12px; font-size:1rem}
+  .erro{
+    background:var(--vermelho-fundo); color:var(--vermelho); padding:10px 12px;
+    border-radius:2px; font-size:.85rem; margin-bottom:16px; text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <form class="login-box" method="POST" action="/login">
+    <div class="mark">§</div>
+    <h1>Convoca</h1>
+    <p class="sub">Controle de chamadas do processo seletivo</p>
+    <div id="erroMsg" class="erro" style="display:none">Senha incorreta. Tente novamente.</div>
+    <label for="senha">Senha de acesso</label>
+    <input type="password" id="senha" name="senha" autofocus required>
+    <button type="submit" class="btn-primary">Entrar</button>
+  </form>
+</div>
+<script>
+  // mostra o aviso de erro se a URL tiver ?erro=1
+  if (new URLSearchParams(location.search).get('erro')) {
+    document.getElementById('erroMsg').style.display = 'block';
+  }
+</script>
+</body>
+</html>

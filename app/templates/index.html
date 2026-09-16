@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convoca — Controle de Chamadas</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">§</span>
+    <div>
+      <h1>Convoca</h1>
+      <p>Convocação, matrícula e remanejamento de vagas</p>
+    </div>
+  </div>
+  <div class="proc-select">
+    <select id="processoSel"></select>
+    <button id="novoProc" class="btn-ghost">+ Processo</button>
+    <button id="excluirProc" class="btn-ghost" title="Excluir o processo selecionado">🗑</button>
+    <a href="/logout" class="btn-ghost" title="Sair do sistema" style="text-decoration:none">Sair</a>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button data-tab="painel" class="active">Painel</button>
+  <button data-tab="hetero">Heteroidentificação</button>
+  <button data-tab="chamadas">Chamadas</button>
+  <button data-tab="vagas">Vagas</button>
+  <button data-tab="log">Rastreabilidade</button>
+  <button data-tab="regras">Regras</button>
+</nav>
+
+<main>
+  <!-- PAINEL -->
+  <section id="painel" class="tab active">
+    <div class="panel">
+      <h2>Importar planilha da banca</h2>
+      <p class="hint">Envie o arquivo .xlsx com o resultado final. O sistema transcreve a
+        classificação oficial sem recalcular nada e deriva as vagas dos candidatos
+        classificados. A 1ª chamada é gerada depois, na aba Chamadas, após a heteroidentificação.</p>
+      <div class="upload">
+        <input type="file" id="arquivo" accept=".xlsx">
+        <input type="text" id="cursoNome" placeholder="Nome do curso (opcional; detectado da planilha)">
+        <button id="btnImportar" class="btn-primary">Importar planilha</button>
+      </div>
+      <div id="importResumo"></div>
+    </div>
+    <div class="panel">
+      <h2>Cursos deste processo</h2>
+      <div id="cursosLista" class="cards"></div>
+    </div>
+  </section>
+
+  <!-- HETERO -->
+  <section id="hetero" class="tab">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Heteroidentificação (PPI)</h2>
+        <button id="btnConvocarHetero" class="btn-primary">Convocar PPI (classificados + espera)</button>
+      </div>
+      <p class="hint">Convocação antecipada de todos os candidatos PPI (LB_PPI e LI_PPI),
+        classificados e em lista de espera, antes da 1ª chamada de matrícula. Homologa,
+        indefere ou marca ausência. Indeferido/ausente bloqueia todas as cotas e mantém
+        apenas a Ampla Concorrência.</p>
+      <table id="heteroTabela" class="grid"></table>
+    </div>
+  </section>
+
+  <!-- CHAMADAS -->
+  <section id="chamadas" class="tab">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Chamadas de matrícula</h2>
+        <div id="chamadasAcao"></div>
+      </div>
+      <p class="hint">A 1ª chamada só pode ser gerada depois da heteroidentificação. A partir
+        da 2ª, o motor busca o próximo elegível na fila de cada vaga em aberto e aplica o
+        remanejamento quando não há elegível.</p>
+      <div id="chamadasLista"></div>
+    </div>
+  </section>
+
+  <!-- VAGAS -->
+  <section id="vagas" class="tab">
+    <div class="panel">
+      <h2>Situação das vagas</h2>
+      <p class="hint">Cada vaga guarda a modalidade original, a atual e a da última matrícula.
+        Vagas liberadas após o início das aulas reabrem pela modalidade da última matrícula.</p>
+      <table id="vagasTabela" class="grid"></table>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section id="log" class="tab">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Rastreabilidade das decisões</h2>
+        <select id="logFiltro">
+          <option value="">Todas as ações</option>
+          <option value="CONVOCADO">Convocado</option>
+          <option value="PULADO">Pulado</option>
+          <option value="REMANEJADA">Remanejada</option>
+          <option value="VAGA_NAO_PREENCHIDA">Vaga não preenchida</option>
+          <option value="MATRICULADO">Matriculado</option>
+          <option value="VAGA_LIBERADA">Vaga liberada</option>
+        </select>
+      </div>
+      <p class="hint">Toda decisão registra o porquê: quem foi escolhido e por que os
+        anteriores não puderam ser convocados.</p>
+      <div id="logLista" class="loglist"></div>
+    </div>
+  </section>
+
+  <!-- REGRAS -->
+  <section id="regras" class="tab">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Ordem de remanejamento</h2>
+        <div id="regrasAcoes"></div>
+      </div>
+      <p class="hint">Como é legislação e pode mudar, a ordem é editável. Cada linha diz,
+        quando sobra uma vaga naquela modalidade, para quais modalidades ela deve ser
+        remanejada, em ordem. Clique em "Editar tabela" para alterar e depois salve.</p>
+      <table id="ordemTabela" class="grid ordem"></table>
+    </div>
+  </section>
+</main>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <div id="modalBody"></div>
+    <button class="btn-ghost" onclick="fecharModal()">Fechar</button>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
