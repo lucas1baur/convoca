@@ -304,8 +304,17 @@ def listar_vagas(pid: int):
         LEFT JOIN candidato c ON c.id=v.candidato_atual_id
         WHERE cu.processo_id=? ORDER BY v.curso_id, v.modalidade_original, v.id""",
         (pid,)).fetchall()
+    out = []
+    for r in rows:
+        d = dict(r)
+        # Para vagas livres (sem ocupante e ainda abertas/liberadas), verifica na
+        # hora se ainda há alguém elegível. Se não houver, a lista esgotou.
+        d["sem_elegivel"] = False
+        if not r["candidato_atual_id"] and r["status"] in ("ABERTA", "LIBERADA"):
+            d["sem_elegivel"] = not motor.vaga_tem_elegivel(conn, r)
+        out.append(d)
     conn.close()
-    return [dict(r) for r in rows]
+    return out
 
 
 @app.post("/api/vaga/{vid}/liberar")

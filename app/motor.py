@@ -687,6 +687,33 @@ def liberar_vaga_pos_aulas(vaga_id, motivo="Não compareceu 10 dias úteis letiv
 
 
 # ----------------------------------------------------------------------------- 
+# CONSULTA: uma vaga livre ainda tem alguém elegível para chamar?
+# ----------------------------------------------------------------------------- 
+def vaga_tem_elegivel(conn, vaga):
+    """Verifica, SEM gravar nada, se a vaga livre tem algum candidato elegível
+    seguindo a cadeia de remanejamento a partir da modalidade atual dela.
+    Retorna True se há quem chamar, False se a lista esgotou.
+
+    É uma consulta pura (não registra log, não convoca), usada só para informar
+    a situação na tela de Vagas. Reflete o estado ATUAL do processo."""
+    ordem = get_ordem_vigente(conn)
+    curso_id = vaga["curso_id"]
+    mod_inicial = vaga["modalidade_atual"]
+    cadeia = [mod_inicial] + ordem.get(mod_inicial, [])
+    for mod in cadeia:
+        cands = conn.execute(f"""
+            SELECT c.*, e.* FROM candidato c
+            JOIN elegibilidade e ON e.candidato_id=c.id
+            WHERE c.curso_id=? AND c.pos_{mod.lower()} IS NOT NULL
+            ORDER BY c.pos_{mod.lower()}""", (curso_id,)).fetchall()
+        for c in cands:
+            ok, _ = elegivel_para(c, c, mod)
+            if ok:
+                return True
+    return False
+
+
+# ----------------------------------------------------------------------------- 
 # EXCLUSÃO DE CHAMADA — apaga a última chamada e reverte tudo que ela causou
 # ----------------------------------------------------------------------------- 
 def excluir_chamada(chamada_id):

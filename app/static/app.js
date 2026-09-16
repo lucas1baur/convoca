@@ -326,12 +326,16 @@ async function carregarVagas(){
       <td><span class="tarja t-neutro">${v.modalidade_original}</span></td>
       <td><span class="tarja t-carimbo">${v.modalidade_atual}</span></td>
       <td>${v.modalidade_ultima_matricula ? `<span class="tarja t-ok">${v.modalidade_ultima_matricula}</span>` : '—'}</td>
-      <td>${v.cand_nome || '<span class="vazio">livre</span>'}</td>
-      <td>${statusVaga(v.status)}</td>
+      <td>${v.cand_nome ? `<span class="nome-link" onclick="ficha(${v.candidato_atual_id})">${v.cand_nome}</span>` : '<span class="vazio">livre</span>'}</td>
+      <td>${statusVaga(v.status, v.sem_elegivel)}</td>
       <td>${v.status==='PREENCHIDA' ? `<button class="btn-liberar" onclick="liberar(${v.id})">Liberar (pós-aulas)</button>` : '—'}</td>
     </tr>`).join('');
 }
-function statusVaga(s){
+function statusVaga(s, semElegivel){
+  // vaga livre que esgotou a lista de espera ganha um aviso próprio
+  if (semElegivel && (s==='ABERTA' || s==='LIBERADA')){
+    return `<span class="tarja t-erro" title="Não há mais candidatos elegíveis para esta vaga no momento">Sem elegível (lista esgotada)</span>`;
+  }
   const m = {ABERTA:['t-espera','Aberta'], PREENCHIDA:['t-ok','Preenchida'], LIBERADA:['t-carimbo','Liberada']};
   const [c,t] = m[s]||['t-neutro',s]; return `<span class="tarja ${c}">${t}</span>`;
 }
