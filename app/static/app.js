@@ -243,7 +243,7 @@ function linhaConv(cv, corrigivel){
   if (cv.resultado){
     acoes = corrigivel
       ? `<button class="btn-corrigir" onclick="corrigir(${cv.id})">↺ Corrigir</button>`
-      : '<span class="num" title="Chamada selada por chamadas posteriores">selado</span>';
+      : '<span class="num" title="Chamada selada por chamadas posteriores">publicado</span>';
   } else {
     acoes = `<div class="acoes-result">
         <button onclick="resMat(${cv.id},'HOMOLOGADO')">Homologar</button>
