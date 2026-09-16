@@ -192,6 +192,7 @@ main{max-width:1100px; margin:0 auto; padding:28px}
 .a-MATRICULADO{color:var(--verde)}
 .a-VAGA_LIBERADA,.a-CORRECAO{color:var(--ambar)}
 .log-motivo b{color:var(--tinta)}
+.log-chamada{color:var(--carimbo); font-weight:600; white-space:nowrap}
 
 /* Regras */
 .versoes{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap}

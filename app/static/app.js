@@ -10,6 +10,16 @@ const api = async (url, opts) => {
 };
 const form = obj => { const f = new FormData(); for (const k in obj) f.append(k, obj[k]); return f; };
 
+// Formata a data (gravada em ISO 'AAAA-MM-DD HH:MM:SS') para o padrão brasileiro
+// 'DD/MM/AAAA HH:MM', sem segundos. Se algo vier fora do esperado, devolve como veio.
+function dataBR(s){
+  if (!s) return '';
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if (!m) return s;
+  const [, ano, mes, dia, hh, mm] = m;
+  return `${dia}/${mes}/${ano} ${hh}:${mm}`;
+}
+
 function toast(msg, erro=false){
   const t = $('#toast'); t.textContent = msg; t.className = 'toast' + (erro?' erro':'');
   setTimeout(()=>t.classList.add('hidden'), 3200);
@@ -226,7 +236,7 @@ async function carregarChamadas(){
       <header>
         <h3>${ch.numero}ª chamada de matrícula</h3>
         <div style="display:flex;gap:10px;align-items:center">
-          <span class="num">${ch.criado_em}</span>
+          <span class="num">${dataBR(ch.criado_em)}</span>
           ${ch.excluivel ? `<button class="btn-excluir" onclick="excluirChamada(${ch.id}, ${ch.numero})">－ Excluir chamada</button>` : ''}
         </div>
       </header>
@@ -352,13 +362,18 @@ async function carregarLog(){
   const logs = await api(url);
   const cont = $('#logLista');
   if (!logs.length){ cont.innerHTML = '<p class="vazio">Sem registros.</p>'; return; }
-  cont.innerHTML = logs.map(l=>`
+  cont.innerHTML = logs.map(l=>{
+    // só as linhas de chamada de MATRÍCULA ganham o sufixo com o número da chamada
+    const sufixoChamada = (l.chamada_tipo === 'MATRICULA' && l.chamada_numero)
+      ? ` <span class="log-chamada">(${l.chamada_numero}ª chamada)</span>` : '';
+    return `
     <div class="log-item">
       <div><span class="log-acao a-${l.acao}">${l.acao.replace(/_/g,' ')}</span></div>
-      <div class="log-motivo">${l.cand_nome?`<b>${l.cand_nome}</b> — `:''}${l.motivo}
-        <div class="num" style="font-size:.75rem;color:var(--tinta-suave)">${l.criado_em}</div>
+      <div class="log-motivo">${l.cand_nome?`<b>${l.cand_nome}</b> — `:''}${l.motivo}${sufixoChamada}
+        <div class="num" style="font-size:.75rem;color:var(--tinta-suave)">${dataBR(l.criado_em)}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 $('#logFiltro').onchange = carregarLog;
 
@@ -436,7 +451,7 @@ window.ficha = async (id)=>{
     <div class="ficha-linha"><span>Cotas bloqueadas</span><span>${c.cotas_bloqueadas?'SIM':'não'}</span></div>
     <div class="ficha-linha"><span>Situação atual</span><span><b>${c.situacao_atual}</b></span></div>
     <h2 style="font-size:1rem;margin-top:20px">Histórico</h2>
-    ${d.historico.length ? d.historico.map(h=>`<div class="log-item"><div><span class="log-acao a-${h.acao}">${h.acao.replace(/_/g,' ')}</span></div><div>${h.motivo}<div class="num" style="font-size:.72rem;color:var(--tinta-suave)">${h.criado_em}</div></div></div>`).join('') : '<p class="vazio">Sem histórico.</p>'}
+    ${d.historico.length ? d.historico.map(h=>`<div class="log-item"><div><span class="log-acao a-${h.acao}">${h.acao.replace(/_/g,' ')}</span></div><div>${h.motivo}<div class="num" style="font-size:.72rem;color:var(--tinta-suave)">${dataBR(h.criado_em)}</div></div></div>`).join('') : '<p class="vazio">Sem histórico.</p>'}
   `);
 };
 

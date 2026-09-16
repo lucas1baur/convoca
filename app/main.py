@@ -327,8 +327,11 @@ def liberar_vaga(vid: int):
 @app.get("/api/processos/{pid}/log")
 def log(pid: int, acao: str = None):
     conn = db.get_conn()
-    q = """SELECT l.*, c.nome cand_nome FROM log_decisao l
+    # traz também o tipo e o número da chamada a que a linha pertence (quando houver)
+    q = """SELECT l.*, c.nome cand_nome, ch.tipo chamada_tipo, ch.numero chamada_numero
+           FROM log_decisao l
            LEFT JOIN candidato c ON c.id=l.candidato_id
+           LEFT JOIN chamada ch ON ch.id=l.chamada_id
            WHERE l.processo_id=?"""
     params = [pid]
     if acao:
