@@ -175,7 +175,33 @@ async def importar_planilha(pid: int, arquivo: UploadFile = File(...),
 # --------- Heteroidentificação ------------------------------------------------
 @app.post("/api/processos/{pid}/hetero/convocar")
 def hetero_convocar(pid: int):
-    return motor.convocar_hetero(pid)
+    try:
+        return motor.convocar_hetero(pid)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/processos/{pid}/hetero/excluir")
+def hetero_excluir(pid: int):
+    try:
+        return motor.excluir_hetero(pid)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/processos/{pid}/hetero/status")
+def hetero_status(pid: int):
+    """Diz se a hetero já foi convocada e se ela ainda pode ser refeita
+    (só pode enquanto a 1ª chamada não foi gerada)."""
+    conn = db.get_conn()
+    convocada = conn.execute("""SELECT COUNT(*) n FROM chamada
+                                WHERE processo_id=? AND tipo='HETERO'""",
+                             (pid,)).fetchone()["n"] > 0
+    tem_matricula = conn.execute("""SELECT COUNT(*) n FROM chamada
+                                    WHERE processo_id=? AND tipo='MATRICULA'""",
+                                 (pid,)).fetchone()["n"] > 0
+    conn.close()
+    return {"convocada": convocada, "pode_refazer": convocada and not tem_matricula}
 
 
 @app.get("/api/processos/{pid}/hetero")

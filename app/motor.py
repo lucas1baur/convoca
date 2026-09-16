@@ -216,9 +216,21 @@ def _pos(cand, modalidade):
 # ----------------------------------------------------------------------------- 
 def convocar_hetero(processo_id):
     """Convoca para heteroidentificação TODOS os PPI (classificados + espera),
-    antecipadamente (§9). Retorna a lista de convocados."""
+    antecipadamente (§9). Retorna a lista de convocados.
+
+    A heteroidentificação é convocada UMA ÚNICA VEZ. Se já houver uma convocação
+    de hetero para o processo, bloqueia (para refazer, use excluir_hetero antes)."""
     conn = get_conn()
     cur = conn.cursor()
+
+    # trava: hetero é convocada só uma vez
+    ja = cur.execute("""SELECT COUNT(*) n FROM chamada
+                        WHERE processo_id=? AND tipo='HETERO'""", (processo_id,)).fetchone()["n"]
+    if ja:
+        conn.close()
+        raise ValueError("A heteroidentificação já foi convocada para este processo. "
+                         "Para refazê-la, exclua a convocação atual primeiro.")
+
     n_ch = _proximo_numero(conn, processo_id, "HETERO")
     cur.execute("INSERT INTO chamada (processo_id, numero, tipo) VALUES (?,?,'HETERO')",
                 (processo_id, n_ch))
@@ -281,6 +293,56 @@ def registrar_hetero(candidato_id, resultado):
 
     conn.commit()
     conn.close()
+
+
+def excluir_hetero(processo_id):
+    """Desfaz a convocação de heteroidentificação inteira, para permitir refazê-la.
+
+    Só é permitido enquanto a 1ª chamada de matrícula ainda NÃO foi gerada, porque
+    a 1ª chamada usa o resultado da hetero; se ela já existe, refazer a hetero
+    invalidaria as convocações feitas. Nesse caso, exclua antes a 1ª chamada.
+
+    Reverte tudo: limpa resultado_hetero, desfaz os bloqueios de cota causados pela
+    hetero (situações SO_AC / INDEFERIDO que vieram dela), e apaga as convocações,
+    os logs e a chamada de hetero."""
+    conn = get_conn()
+    cur = conn.cursor()
+
+    ch = cur.execute("""SELECT * FROM chamada WHERE processo_id=? AND tipo='HETERO'""",
+                     (processo_id,)).fetchone()
+    if not ch:
+        conn.close()
+        raise ValueError("Não há heteroidentificação convocada para excluir.")
+
+    tem_matricula = cur.execute("""SELECT COUNT(*) n FROM chamada
+                                   WHERE processo_id=? AND tipo='MATRICULA'""",
+                                (processo_id,)).fetchone()["n"]
+    if tem_matricula:
+        conn.close()
+        raise ValueError("Não é possível refazer a heteroidentificação porque a 1ª "
+                         "chamada já foi gerada. Exclua a(s) chamada(s) de matrícula "
+                         "primeiro.")
+
+    # candidatos que passaram pela hetero -> limpar os efeitos
+    cands = cur.execute("""SELECT candidato_id FROM convocacao WHERE chamada_id=?""",
+                        (ch["id"],)).fetchall()
+    for row in cands:
+        cid = row["candidato_id"]
+        # desfaz resultado da hetero e os bloqueios que ela pode ter causado.
+        # Como nada de matrícula rodou ainda, é seguro voltar ao estado inicial.
+        cur.execute("""UPDATE elegibilidade
+                       SET resultado_hetero=NULL, convocado_hetero=0,
+                           cotas_bloqueadas=0,
+                           situacao_atual='AGUARDANDO'
+                       WHERE candidato_id=?""", (cid,))
+
+    cur.execute("DELETE FROM convocacao WHERE chamada_id=?", (ch["id"],))
+    cur.execute("DELETE FROM log_decisao WHERE chamada_id=?", (ch["id"],))
+    cur.execute("DELETE FROM chamada WHERE id=?", (ch["id"],))
+
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 # ----------------------------------------------------------------------------- 

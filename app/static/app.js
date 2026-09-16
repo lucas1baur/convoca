@@ -114,9 +114,53 @@ let heteroDados = [];        // dados carregados da API (ordem original = posiç
 let heteroOrdenacao = 'posicao'; // 'posicao' | 'nome'
 
 async function carregarHetero(){
-  heteroDados = await api(`/api/processos/${processoAtual}/hetero`);
+  const [dados, status] = await Promise.all([
+    api(`/api/processos/${processoAtual}/hetero`),
+    api(`/api/processos/${processoAtual}/hetero/status`)
+  ]);
+  heteroDados = dados;
+  renderHeteroAcao(status);
   renderHetero();
 }
+
+function renderHeteroAcao(status){
+  const acao = $('#heteroAcao');
+  if (!status.convocada){
+    // ainda não convocada: mostra o botão de convocar
+    acao.innerHTML = `<button class="btn-primary" onclick="convocarHetero()">Convocar PPI (classificados + espera)</button>`;
+  } else if (status.pode_refazer){
+    // já convocada, mas a 1ª chamada ainda não foi gerada: pode refazer
+    acao.innerHTML = `<button class="btn-excluir" onclick="refazerHetero()">↺ Refazer heteroidentificação</button>`;
+  } else {
+    // já convocada e a 1ª chamada já foi gerada: travada
+    acao.innerHTML = `<span class="num" title="A 1ª chamada já foi gerada">heteroidentificação concluída</span>`;
+  }
+}
+
+window.convocarHetero = async ()=>{
+  try{
+    const r = await api(`/api/processos/${processoAtual}/hetero/convocar`, {method:'POST'});
+    toast(`${r.convocados.length} candidatos PPI convocados.`); carregarHetero();
+  }catch(e){
+    let msg = e.message;
+    try{ msg = JSON.parse(e.message).detail || msg; }catch(_){}
+    toast(msg, true);
+  }
+};
+
+window.refazerHetero = async ()=>{
+  if (!confirm('Refazer a heteroidentificação? A convocação atual e todos os '
+    + 'resultados lançados (homologado/indeferido/ausente) serão apagados, e você '
+    + 'convoca de novo do zero. Só é possível enquanto a 1ª chamada não foi gerada.')) return;
+  try{
+    await api(`/api/processos/${processoAtual}/hetero/excluir`, {method:'POST'});
+    toast('Heteroidentificação desfeita. Convoque novamente.'); carregarHetero();
+  }catch(e){
+    let msg = e.message;
+    try{ msg = JSON.parse(e.message).detail || msg; }catch(_){}
+    toast(msg, true);
+  }
+};
 
 function renderHetero(){
   const t = $('#heteroTabela');
@@ -160,10 +204,6 @@ function tarjaHetero(r){
 window.resHetero = async (id, res)=>{
   await api(`/api/hetero/${id}/resultado`, {method:'POST', body:form({resultado:res})});
   toast(`Registrado: ${res.toLowerCase()}.`); carregarHetero();
-};
-$('#btnConvocarHetero').onclick = async ()=>{
-  const r = await api(`/api/processos/${processoAtual}/hetero/convocar`, {method:'POST'});
-  toast(`${r.convocados.length} candidatos PPI convocados.`); carregarHetero();
 };
 
 // ---- Chamadas ----
