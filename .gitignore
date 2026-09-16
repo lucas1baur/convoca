@@ -1,0 +1,17 @@
+# Bancos de dados locais (contêm dados de candidatos — nunca subir para o GitHub)
+*.db
+convoca.db
+convoca_v2.db
+
+# Arquivos temporários do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ambiente virtual, se houver
+venv/
+.venv/
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db

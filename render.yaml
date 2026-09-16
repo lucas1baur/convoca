@@ -1,0 +1,25 @@
+# Blueprint do Render para o sistema Convoca.
+# Descreve um serviço web Python com disco persistente (para o banco SQLite).
+# Ao conectar este repositório no Render, ele lê este arquivo e configura tudo.
+#
+# Depois de criar o serviço, defina no painel do Render as variáveis marcadas
+# com sync: false (senha e segredo), que não ficam salvas no repositório.
+
+services:
+  - type: web
+    name: convoca
+    runtime: python
+    plan: starter            # plano pago (~US$7/mês): permite disco persistente e não hiberna
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    disk:
+      name: convoca-dados
+      mountPath: /var/data   # o disco persistente é montado aqui
+      sizeGB: 1
+    envVars:
+      - key: CONVOCA_DB_PATH
+        value: /var/data/convoca_v2.db   # banco fica no disco persistente
+      - key: CONVOCA_SENHA
+        sync: false          # defina a senha de acesso no painel do Render
+      - key: CONVOCA_SECRET
+        generateValue: true  # o Render gera uma chave secreta forte automaticamente
