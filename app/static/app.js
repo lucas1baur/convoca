@@ -328,7 +328,7 @@ async function carregarVagas(){
       <td>${v.modalidade_ultima_matricula ? `<span class="tarja t-ok">${v.modalidade_ultima_matricula}</span>` : '—'}</td>
       <td>${v.cand_nome || '<span class="vazio">livre</span>'}</td>
       <td>${statusVaga(v.status)}</td>
-      <td>${v.status==='PREENCHIDA' ? `<button class="acoes-result" onclick="liberar(${v.id})"><button>Liberar (pós-aulas)</button></button>` : '—'}</td>
+      <td>${v.status==='PREENCHIDA' ? `<button class="btn-liberar" onclick="liberar(${v.id})">Liberar (pós-aulas)</button>` : '—'}</td>
     </tr>`).join('');
 }
 function statusVaga(s){

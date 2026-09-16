@@ -164,6 +164,12 @@ main{max-width:1100px; margin:0 auto; padding:28px}
   font-weight:600;
 }
 .btn-excluir:hover{background:var(--vermelho); color:#fff}
+.btn-liberar{
+  font-size:.74rem; padding:5px 12px; border:1px solid var(--ambar);
+  background:var(--ambar-fundo); color:var(--ambar); border-radius:2px; cursor:pointer;
+  font-weight:600;
+}
+.btn-liberar:hover{background:var(--ambar); color:#fff}
 
 /* Selects na edição da tabela de ordem */
 .ordem select{
