@@ -194,6 +194,18 @@ main{max-width:1100px; margin:0 auto; padding:28px}
 .log-motivo b{color:var(--tinta)}
 .log-chamada{color:var(--carimbo); font-weight:600; white-space:nowrap}
 
+/* Filtros da rastreabilidade */
+.log-filtros{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.log-filtros input[type=text]{
+  padding:8px 12px; border:1px solid var(--linha); border-radius:2px; font-size:.9rem;
+  min-width:180px;
+}
+.log-filtros input[type=text]:focus{outline:none; border-color:var(--carimbo)}
+.log-filtros select{
+  padding:8px 12px; border:1px solid var(--linha); border-radius:2px; font-size:.9rem;
+  background:#fff;
+}
+
 /* Regras */
 .versoes{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap}
 .versao-chip{

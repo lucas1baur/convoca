@@ -356,11 +356,39 @@ window.liberar = async (id)=>{
 };
 
 // ---- Log ----
+let logDados = [];   // registros carregados do servidor (já filtrados por ação/chamada)
+
 async function carregarLog(){
-  const filtro = $('#logFiltro').value;
-  const url = `/api/processos/${processoAtual}/log` + (filtro?`?acao=${filtro}`:'');
-  const logs = await api(url);
+  // popula o seletor de chamadas com os números existentes (uma vez por carga)
+  try{
+    const nums = await api(`/api/processos/${processoAtual}/chamadas-numeros`);
+    const selC = $('#logChamada');
+    const atual = selC.value;
+    selC.innerHTML = '<option value="">Todas as chamadas</option>' +
+      nums.map(n=>`<option value="${n}">${n}ª chamada</option>`).join('');
+    selC.value = atual; // preserva a seleção se ainda existir
+  }catch(_){}
+
+  const acao = $('#logFiltro').value;
+  const chamada = $('#logChamada').value;
+  let url = `/api/processos/${processoAtual}/log`;
+  const qs = [];
+  if (acao) qs.push(`acao=${acao}`);
+  if (chamada) qs.push(`chamada=${chamada}`);
+  if (qs.length) url += '?' + qs.join('&');
+
+  logDados = await api(url);
+  renderLog();
+}
+
+function renderLog(){
+  const busca = ($('#logBusca').value || '').trim().toLowerCase();
   const cont = $('#logLista');
+  // filtro por nome acontece aqui, na tela, sobre o que veio do servidor
+  const logs = busca
+    ? logDados.filter(l => (l.cand_nome || '').toLowerCase().includes(busca))
+    : logDados;
+
   if (!logs.length){ cont.innerHTML = '<p class="vazio">Sem registros.</p>'; return; }
   cont.innerHTML = logs.map(l=>{
     // só as linhas de chamada de MATRÍCULA ganham o sufixo com o número da chamada
@@ -375,7 +403,30 @@ async function carregarLog(){
     </div>`;
   }).join('');
 }
-$('#logFiltro').onchange = carregarLog;
+
+// Filtros SEPARADOS: mexer num zera os outros dois, e recarrega.
+$('#logFiltro').onchange = ()=>{
+  $('#logChamada').value = '';
+  $('#logBusca').value = '';
+  carregarLog();
+};
+$('#logChamada').onchange = ()=>{
+  $('#logFiltro').value = '';
+  $('#logBusca').value = '';
+  carregarLog();
+};
+$('#logBusca').oninput = ()=>{
+  // ao começar a buscar por nome, zera os selects e filtra na tela (sem recarregar)
+  if ($('#logBusca').value){
+    if ($('#logFiltro').value || $('#logChamada').value){
+      $('#logFiltro').value = '';
+      $('#logChamada').value = '';
+      carregarLog();  // recarrega tudo (sem filtros de servidor) e depois filtra por nome
+      return;
+    }
+  }
+  renderLog();
+};
 
 // ---- Regras (tabela única, editável) ----
 let regrasOrdem = {};      // {origem: [destinos]}
@@ -451,7 +502,11 @@ window.ficha = async (id)=>{
     <div class="ficha-linha"><span>Cotas bloqueadas</span><span>${c.cotas_bloqueadas?'SIM':'não'}</span></div>
     <div class="ficha-linha"><span>Situação atual</span><span><b>${c.situacao_atual}</b></span></div>
     <h2 style="font-size:1rem;margin-top:20px">Histórico</h2>
-    ${d.historico.length ? d.historico.map(h=>`<div class="log-item"><div><span class="log-acao a-${h.acao}">${h.acao.replace(/_/g,' ')}</span></div><div>${h.motivo}<div class="num" style="font-size:.72rem;color:var(--tinta-suave)">${dataBR(h.criado_em)}</div></div></div>`).join('') : '<p class="vazio">Sem histórico.</p>'}
+    ${d.historico.length ? d.historico.map(h=>{
+      const sufixoChamada = (h.chamada_tipo === 'MATRICULA' && h.chamada_numero)
+        ? ` <span class="log-chamada">(${h.chamada_numero}ª chamada)</span>` : '';
+      return `<div class="log-item"><div><span class="log-acao a-${h.acao}">${h.acao.replace(/_/g,' ')}</span></div><div>${h.motivo}${sufixoChamada}<div class="num" style="font-size:.72rem;color:var(--tinta-suave)">${dataBR(h.criado_em)}</div></div></div>`;
+    }).join('') : '<p class="vazio">Sem histórico.</p>'}
   `);
 };
 

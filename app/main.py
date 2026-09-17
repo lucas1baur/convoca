@@ -325,7 +325,7 @@ def liberar_vaga(vid: int):
 
 # --------- Rastreabilidade ----------------------------------------------------
 @app.get("/api/processos/{pid}/log")
-def log(pid: int, acao: str = None):
+def log(pid: int, acao: str = None, chamada: int = None):
     conn = db.get_conn()
     # traz também o tipo e o número da chamada a que a linha pertence (quando houver)
     q = """SELECT l.*, c.nome cand_nome, ch.tipo chamada_tipo, ch.numero chamada_numero
@@ -336,10 +336,24 @@ def log(pid: int, acao: str = None):
     params = [pid]
     if acao:
         q += " AND l.acao=?"; params.append(acao)
+    if chamada is not None:
+        # só linhas de chamada de MATRÍCULA com aquele número
+        q += " AND ch.tipo='MATRICULA' AND ch.numero=?"; params.append(chamada)
     q += " ORDER BY l.id DESC LIMIT 500"
     rows = conn.execute(q, params).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+@app.get("/api/processos/{pid}/chamadas-numeros")
+def chamadas_numeros(pid: int):
+    """Números das chamadas de matrícula existentes, para popular o filtro do log."""
+    conn = db.get_conn()
+    rows = conn.execute("""SELECT numero FROM chamada
+                          WHERE processo_id=? AND tipo='MATRICULA'
+                          ORDER BY numero""", (pid,)).fetchall()
+    conn.close()
+    return [r["numero"] for r in rows]
 
 
 # --------- Regras de remanejamento (tabela única, editável) ------------------
@@ -367,8 +381,12 @@ def candidato(cid: int):
     c = conn.execute("""SELECT c.*, e.* FROM candidato c
                         JOIN elegibilidade e ON e.candidato_id=c.id
                         WHERE c.id=?""", (cid,)).fetchone()
-    logs = conn.execute("""SELECT * FROM log_decisao WHERE candidato_id=?
-                           ORDER BY id""", (cid,)).fetchall()
+    # histórico com o tipo e número da chamada a que cada linha pertence
+    logs = conn.execute("""SELECT l.*, ch.tipo chamada_tipo, ch.numero chamada_numero
+                           FROM log_decisao l
+                           LEFT JOIN chamada ch ON ch.id=l.chamada_id
+                           WHERE l.candidato_id=?
+                           ORDER BY l.id""", (cid,)).fetchall()
     conn.close()
     if not c:
         raise HTTPException(404)

@@ -97,18 +97,22 @@
     <div class="panel">
       <div class="panel-head">
         <h2>Rastreabilidade das decisões</h2>
-        <select id="logFiltro">
-          <option value="">Todas as ações</option>
-          <option value="CONVOCADO">Convocado</option>
-          <option value="PULADO">Pulado</option>
-          <option value="REMANEJADA">Remanejada</option>
-          <option value="VAGA_NAO_PREENCHIDA">Vaga não preenchida</option>
-          <option value="MATRICULADO">Matriculado</option>
-          <option value="VAGA_LIBERADA">Vaga liberada</option>
-        </select>
+        <div class="log-filtros">
+          <input type="text" id="logBusca" placeholder="Buscar por nome…" autocomplete="off">
+          <select id="logChamada"><option value="">Todas as chamadas</option></select>
+          <select id="logFiltro">
+            <option value="">Todas as ações</option>
+            <option value="CONVOCADO">Convocado</option>
+            <option value="PULADO">Pulado</option>
+            <option value="REMANEJADA">Remanejada</option>
+            <option value="VAGA_NAO_PREENCHIDA">Vaga não preenchida</option>
+            <option value="MATRICULADO">Matriculado</option>
+            <option value="VAGA_LIBERADA">Vaga liberada</option>
+          </select>
+        </div>
       </div>
       <p class="hint">Toda decisão registra o porquê: quem foi escolhido e por que os
-        anteriores não puderam ser convocados.</p>
+        anteriores não puderam ser convocados. Os filtros funcionam um por vez.</p>
       <div id="logLista" class="loglist"></div>
     </div>
   </section>
